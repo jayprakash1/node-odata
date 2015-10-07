@@ -38,7 +38,7 @@ const getAll = (req, sequelizeModel, options) => {
     let err;
 
     /*jshint -W084 */
-    if(err = countParser(resData, mongooseModel, req.query.$count, req.query.$filter)) {
+    if(err = countParser(resData, sequelizeModel, req.query.$count, req.query.$filter)) {
       return errHandle(err);
     }
 
