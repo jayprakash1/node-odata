@@ -25,7 +25,7 @@ const get = (req, sequelizeModel) => {
   });
 };
 
-const getAll = (req, sequelizeModel, options) => {
+const getAll = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
     let resData = {};
 
@@ -48,17 +48,17 @@ const getAll = (req, sequelizeModel, options) => {
     }
 
     /*jshint -W084 */
-    if(err = orderbyParser(query, req.query.$orderby || options.orderby)) {
+    if(err = orderbyParser(query, req.query.$orderby)) {
       return errHandle(err);
     }
 
     /*jshint -W084 */
-    if(err = skipParser(query, req.query.$skip, options.maxSkip)) {
+    if(err = skipParser(query, req.query.$skip)) {
       return errHandle(err);
     }
 
     /*jshint -W084 */
-    if(err = topParser(query, req.query.$top, options.maxTop)) {
+    if(err = topParser(query, req.query.$top)) {
       return errHandle(err);
     }
 

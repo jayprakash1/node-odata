@@ -34,7 +34,7 @@
     "lodash": "3.6.0",
     "mongoose": "4.0.3",
     "node-uuid": "1.4.3",
-    "sequelize-query-builder": "git+https://github.com/ndreas/sequelize-query-builder.git"
+    "sequelize-query-builder": "git+https://github.com/jayprakash/sequelize-query-builder.git"
   },
   "devDependencies": {
     "coffee-script": "1.9.0",
