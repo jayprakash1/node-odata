@@ -10,7 +10,7 @@ export default (query, top = 0, maxTop = 10000) => {
     return;
   }
   top = min([maxTop, top]);
-  if (top < 0) {
+  if (top <= 0) {
     return;
   }
   query.limit(top);
