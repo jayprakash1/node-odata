@@ -71,7 +71,7 @@ const getAll = (req, sequelizeModel) => {
     // $expand=Customers/Orders
     // $search
 
-    sequelizeModel.find(query.build()).then((data) => {
+    sequelizeModel.findAll(query.build()).then((data) => {
       resData.value = data;
       return resolve({entity: resData});
     }).catch((err) => {
