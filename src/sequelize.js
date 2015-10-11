@@ -8,6 +8,7 @@ import skipParser from './parser/skipParser';
 import topParser from './parser/topParser';
 import selectParser from './parser/selectParser';
 import searchParser from './parser/searchParser'
+import expandParser from './parser/expandParser'
 
 const get = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
@@ -44,6 +45,10 @@ const getAll = (req, sequelizeModel) => {
     }
 
     if(err = searchParser(query, req.query.$search)){
+      return errHandle(err);
+    }
+
+    if(err = expandParser(query, req.query.$expand)){
       return errHandle(err);
     }
 
