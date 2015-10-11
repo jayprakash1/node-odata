@@ -7,6 +7,7 @@ import orderbyParser from './parser/orderbyParser';
 import skipParser from './parser/skipParser';
 import topParser from './parser/topParser';
 import selectParser from './parser/selectParser';
+import searchParser from './parser/searchParser'
 
 const get = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
@@ -39,6 +40,10 @@ const getAll = (req, sequelizeModel) => {
 
     /*jshint -W084 */
     if(err = countParser(resData, sequelizeModel, req.query.$count, req.query.$filter)) {
+      return errHandle(err);
+    }
+
+    if(err = searchParser(query, req.query.$search)){
       return errHandle(err);
     }
 
