@@ -58,7 +58,7 @@ export default (query, $filter) => {
           return new Error("Syntax not implemented for or operator and #{subConditionArr[1]} operator");
         }
         let orCondObj = {};
-        orCondObj[subConditionArr[0]] = stringHelper.formatValue(subConditionArr[2]);
+        orCondObj[subConditionArr[0]] = validator.formatValue(subConditionArr[2]);
         orCond.$or.push(orCondObj);
       }
       query.where(orCond);
