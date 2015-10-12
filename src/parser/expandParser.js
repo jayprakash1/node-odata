@@ -14,8 +14,8 @@ export default (query, expand) => {
   const SPLIT_MULTIPLE_EXPANDS = ',';
 
   expands = expand.split(SPLIT_MULTIPLE_EXPANDS);
-  let subQuery = new Builder();
   for(let i=0; i < expands.length; i++){
+    let subQuery = new Builder();
     let item = expands[i];
     if(item.indexOf('$filter')){
       let arr = item.match(/(.+?)\(\$filter=(.+?)\)/).map((s) => s.trim()).filter((n) => n);
