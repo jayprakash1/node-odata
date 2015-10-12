@@ -27,6 +27,8 @@ export default (query, $filter) => {
 
   const SPLIT_MULTIPLE_CONDITIONS = /(.+?)(?:and(?=(?:[^']*'[^']*')*[^']*$)|$)/g;
   const SPLIT_KEY_OPERATOR_AND_VALUE = /(.+?)(?: (?=(?:[^']*'[^']*')*[^']*$)|$)/g;
+  const SPLIT_MULTIPLE_OR_CONDITIONS = /(.+?)(?:or(?=(?:[^']*'[^']*')*[^']*$)|$)/g;
+  const SPLIT_KEY_OPERATOR_OR_VALUE = /(.+?)(?: (?=(?:[^']*'[^']*')*[^']*$)|$)/g;
 
   let condition;
   if (stringHelper.has($filter, 'and')) {
@@ -39,8 +41,28 @@ export default (query, $filter) => {
   for (let i = 0; i < condition.length; i++) {
     let item = condition[i];
     let conditionArr = item.match(SPLIT_KEY_OPERATOR_AND_VALUE).map((s) => s.trim()).filter((n) => n);
-    if (conditionArr.length !== 3) {
+    if (conditionArr.length !== 3 && !stringHelper.has(item, 'or')) {
       return new Error("Syntax error at '#{item}'.");
+    } else if(stringHelper.has(item, 'or')){
+      // TODO: limited or handling for now. perhaps we should use node-odata-parser which is based on good parser
+      let subCondition = item.match(SPLIT_MULTIPLE_OR_CONDITIONS).map((s) => stringHelper.removeEndOf(s, 'or').trim());
+      let orCond = {$or: []};
+      for(let j=0; j < subCondition.length; j++){
+        let subItem = subCondition[j];
+        let subConditionArr = subItem.match(SPLIT_KEY_OPERATOR_OR_VALUE).map((s) => s.trim()).filter((n) => n);
+        if (subConditionArr.length !== 3) {
+          return new Error("Syntax error at '#{subItem}'.");
+        }
+        //assuming eq by default for now
+        if(subConditionArr[1] != 'eq'){
+          return new Error("Syntax not implemented for or operator and #{subConditionArr[1]} operator");
+        }
+        let orCondObj = {};
+        orCondObj[subConditionArr[0]] = stringHelper.formatValue(subConditionArr[2]);
+        orCond.$or.push(orCondObj);
+      }
+      query.where(orCond);
+      return; 
     }
     let [key, odataOperator, value] = conditionArr;
     value = validator.formatValue(value);
