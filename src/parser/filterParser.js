@@ -24,6 +24,10 @@ export default (query, $filter) => {
   if (!$filter) {
     return;
   }
+  
+  // hackiest way to remove brackets 
+  $filter = $filter.replace(/^\(*/, '');
+  $filter = $filter.replace(/\)*$/, '');
 
   const SPLIT_MULTIPLE_CONDITIONS = /(.+?)(?:and(?=(?:[^']*'[^']*')*[^']*$)|$)/g;
   const SPLIT_KEY_OPERATOR_AND_VALUE = /(.+?)(?: (?=(?:[^']*'[^']*')*[^']*$)|$)/g;
