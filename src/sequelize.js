@@ -27,7 +27,7 @@ const get = (req, sequelizeModel) => {
   });
 };
 
-const getAll = (req, sequelizeModel) => {
+const getAll = (req, sequelizeModel, options) => {
   return new Promise((resolve, reject) => {
     let resData = {};
 
@@ -81,7 +81,7 @@ const getAll = (req, sequelizeModel) => {
     // $expand=Customers/Orders
     // $search
 
-    sequelizeModel.findAll(query.build(sequelizeModel)).then((data) => {
+    sequelizeModel.findAll(query.build(sequelizeModel, options)).then((data) => {
       resData.value = data;
       return resolve({entity: resData});
     }).catch((err) => {
