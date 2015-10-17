@@ -7,8 +7,9 @@ import orderbyParser from './parser/orderbyParser';
 import skipParser from './parser/skipParser';
 import topParser from './parser/topParser';
 import selectParser from './parser/selectParser';
-import searchParser from './parser/searchParser'
-import expandParser from './parser/expandParser'
+import searchParser from './parser/searchParser';
+import expandParser from './parser/expandParser';
+import Promise from 'bluebird';
 
 const get = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
