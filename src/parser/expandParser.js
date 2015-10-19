@@ -23,7 +23,7 @@ export default (query, expand) => {
     let currentIncludeObj = includeObj;
     for(let j=0;j < subItems.length; j++){
       let subItem = subItems[j];
-      if(subItem.indexOf('$filter')){
+      if(subItem.indexOf('$filter') > 0){
         let arr = subItem.match(/(.+?)\(\$filter=(.+?)\)$/).map((s) => s.trim()).filter((n) => n);
         if(arr.length !== 3){
           return new Error("Syntax error at '#{subItem}'.");
