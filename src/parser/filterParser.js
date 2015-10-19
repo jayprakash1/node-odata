@@ -19,129 +19,55 @@
 //   http://host/service/Categories?$filter=Products/$count lt 10
 
 import functions from './functionsParser';
+import parser from 'odata-parser'
 
 export default (query, $filter) => {
   if (!$filter) {
     return;
   }
-  
-  // hackiest way to remove brackets 
-  $filter = $filter.replace(/^\(*/, '');
-  $filter = $filter.replace(/\)*$/, '');
+ 
+  // trying to use odata-parser here which is the ideal solution for the entire odata things but trying to hack it here first 
+  let ast = parser.parse("$filter="+$filter);
+  ast = ast.$filter; // we only passed filter here for now
 
-  const SPLIT_MULTIPLE_CONDITIONS = /(.+?)(?:and(?=(?:[^']*'[^']*')*[^']*$)|$)/g;
-  const SPLIT_KEY_OPERATOR_AND_VALUE = /(.+?)(?: (?=(?:[^']*'[^']*')*[^']*$)|$)/g;
-  const SPLIT_MULTIPLE_OR_CONDITIONS = /(.+?)(?:or(?=(?:[^']*'[^']*')*[^']*$)|$)/g;
-  const SPLIT_KEY_OPERATOR_OR_VALUE = /(.+?)(?: (?=(?:[^']*'[^']*')*[^']*$)|$)/g;
-
-  let condition;
-  if (stringHelper.has($filter, 'and')) {
-    condition = $filter.match(SPLIT_MULTIPLE_CONDITIONS).map((s) => stringHelper.removeEndOf(s, 'and').trim());
-  }
-  else {
-    condition = [ $filter.trim() ];
-  }
-
-  for (let i = 0; i < condition.length; i++) {
-    let item = condition[i];
-    let conditionArr = item.match(SPLIT_KEY_OPERATOR_AND_VALUE).map((s) => s.trim()).filter((n) => n);
-    if (conditionArr.length !== 3 && !stringHelper.has(item, 'or')) {
-      return new Error("Syntax error at '#{item}'.");
-    } else if(stringHelper.has(item, 'or')){
-      // TODO: limited or handling for now. perhaps we should use node-odata-parser which is based on good parser
-      let subCondition = item.match(SPLIT_MULTIPLE_OR_CONDITIONS).map((s) => stringHelper.removeEndOf(s, 'or').trim());
-      let orCond = {$or: []};
-      for(let j=0; j < subCondition.length; j++){
-        let subItem = subCondition[j];
-        let subConditionArr = subItem.match(SPLIT_KEY_OPERATOR_OR_VALUE).map((s) => s.trim()).filter((n) => n);
-        if (subConditionArr.length !== 3) {
-          return new Error("Syntax error at '#{subItem}'.");
-        }
-        //assuming eq by default for now
-        if(subConditionArr[1] != 'eq'){
-          return new Error("Syntax not implemented for or operator and #{subConditionArr[1]} operator");
-        }
-        let orCondObj = {};
-        orCondObj[subConditionArr[0]] = validator.formatValue(subConditionArr[2]);
-        orCond.$or.push(orCondObj);
-      }
-      query.where(orCond);
-      return; 
+  let whereCondObj  = {};
+  let getWhereCondObj = function(ast){
+    if(ast.error){
+      throw("parsing error: " + ast.error);
     }
-    let [key, odataOperator, value] = conditionArr;
-    value = validator.formatValue(value);
-
-    // handle query-functions
-    let queryFunctions = ['indexof', 'year'];
-    for (let i = 0; i < queryFunctions.length; i++) {
-      let queryFunction = queryFunctions[i];
-      if (key.indexOf(`${queryFunction}(`) === 0) {
-        functions[queryFunction](query, key, odataOperator, value);
-        return;
-      }
-    }
-
-    switch(odataOperator) {
+    let tempWhereCondObj = {};
+    switch(ast.type){
+      case 'and': 
+        return {$and: [getWhereCondObj(ast.left), getWhereCondObj(ast.right)]};
+      case 'or':
+        return {$and: [getWhereCondObj(ast.left), getWhereCondObj(ast.right)]};
       case 'eq':
-        query.where(key).equals(value);
-        break;
-      case 'ne':
-        query.where(key).ne(value);
-        break;
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$eq: getWhereCondObj(ast.right)}; 
+        return tempWhereCondObj;
       case 'gt':
-        query.where(key).gt(value);
-        break;
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$gt: getWhereCondObj(ast.right)};
+        return tempWhereCondObj; 
       case 'ge':
-        query.where(key).gte(value);
-        break;
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$gte: getWhereCondObj(ast.right)};
+        return tempWhereCondObj; 
       case 'lt':
-        query.where(key).lt(value);
-        break;
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$lt: getWhereCondObj(ast.right)};
+        return tempWhereCondObj; 
       case 'le':
-        query.where(key).lte(value);
-        break;
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$lte: getWhereCondObj(ast.right)}; 
+        return tempWhereCondObj; 
+      case 'ne':
+        tempWhereCondObj[getWhereCondObj(ast.left)] = {$ne: getWhereCondObj(ast.right)}; 
+        return tempWhereCondObj;
+      case 'property':
+        return ast.name;
+      case 'literal':
+        return ast.value;
       default:
-        return new Error("Incorrect operator at '#{item}'.");
+        throw('not implemented ' + ast.key + ' ' + ast);
     }
-  }
-};
+  };
 
-
-const stringHelper = {
-  has : (str, key) => {
-    return str.indexOf(key) >= 0;
-  },
-
-  isBeginWith : (str, key) => {
-    return str.indexOf(key) === 0;
-  },
-
-  isEndWith : (str, key) => {
-    return str.lastIndexOf(key) === (str.length - key.length);
-  },
-
-  removeEndOf : (str, key) => {
-    if (stringHelper.isEndWith(str, key)) {
-      return str.substr(0, str.length - key.length);
-    }
-    return str;
-  },
-};
-
-const validator = {
-  formatValue : (value) => {
-    if (value === 'true') {
-      return true;
-    }
-    if (value === 'false') {
-      return false;
-    }
-    if (+value === +value) {
-      return +value;
-    }
-    if (stringHelper.isBeginWith(value, "'") && stringHelper.isEndWith(value, "'")) {
-      return value.slice(1, -1);
-    }
-    return new Error(`Syntax error at '${value}'.`);
-  }
+  whereCondObj = getWhereCondObj(ast);
+  query.where(whereCondObj);
 };
