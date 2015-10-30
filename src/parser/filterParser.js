@@ -40,7 +40,7 @@ export default (query, $filter) => {
       case 'and': 
         return {$and: [getWhereCondObj(ast.left), getWhereCondObj(ast.right)]};
       case 'or':
-        return {$and: [getWhereCondObj(ast.left), getWhereCondObj(ast.right)]};
+        return {$or: [getWhereCondObj(ast.left), getWhereCondObj(ast.right)]};
       case 'eq':
         tempWhereCondObj[getWhereCondObj(ast.left)] = {$eq: getWhereCondObj(ast.right)}; 
         return tempWhereCondObj;
