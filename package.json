@@ -34,7 +34,7 @@
     "lodash": "3.6.0",
     "method-override": "2.3.3",
     "node-uuid": "1.4.3",
-    "odata-parser": "^1.2.1",
+    "odata-parser": "git+https://github.com/jayprakash1/node-odata-parser.git",
     "sequelize-query-builder": "git+https://github.com/jayprakash1/sequelize-query-builder.git"
   },
   "devDependencies": {
