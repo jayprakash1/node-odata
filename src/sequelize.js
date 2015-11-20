@@ -15,7 +15,7 @@ const get = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
     var includes = [];
     if( (sequelizeModel.getFindOneIncludes !== null) && (sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models).length > 0) )
-      includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelizeModel.models);
+      includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models);
     sequelizeModel.findById(req.params.id, {include: includes}).then((entity) => {
       
       if (!entity) {
