@@ -1,6 +1,6 @@
 "use strict";
 
-import Builder from 'sequelize-query-builder'
+import Builder from 'sequelize-query-builder';
 import countParser from './parser/countParser';
 import filterParser from './parser/filterParser';
 import orderbyParser from './parser/orderbyParser';
@@ -13,7 +13,10 @@ import Promise from 'bluebird';
 
 const get = (req, sequelizeModel) => {
   return new Promise((resolve, reject) => {
-    sequelizeModel.findById(req.params.id).then((entity) => {
+    var includes = [];
+    if( (sequelizeModel.getFindOneIncludes !== null) && (sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models).length > 0) )
+      includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelizeModel.models);
+    sequelizeModel.findById(req.params.id, {include: includes}).then((entity) => {
       
       if (!entity) {
         return reject({status: 404}, {text: 'Not Found'});

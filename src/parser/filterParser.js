@@ -19,7 +19,7 @@
 //   http://host/service/Categories?$filter=Products/$count lt 10
 
 import functions from './functionsParser';
-import parser from 'odata-parser'
+import parser from 'odata-parser';
 
 export default (query, $filter) => {
   if (!$filter) {

@@ -1,11 +1,11 @@
 "use strict";
 
-import Builder from 'sequelize-query-builder'
+import Builder from 'sequelize-query-builder';
 import filterParser from './filterParser';
 
 // a small way to convert it to expected format internally
 export default (query, expand) => {
-  if( expand == null )
+  if( expand === null )
     return;
 
   let expands;
@@ -41,5 +41,5 @@ export default (query, expand) => {
     }
     includes.push(includeObj);
   }
-  query.include(includes)
+  query.include(includes);
 };
