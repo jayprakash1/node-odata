@@ -5,7 +5,7 @@ import filterParser from './filterParser';
 
 // a small way to convert it to expected format internally
 export default (query, expand) => {
-  if( expand === null )
+  if( expand == null )
     return;
 
   let expands;
