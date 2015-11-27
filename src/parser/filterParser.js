@@ -63,7 +63,7 @@ export default (query, $filter) => {
         return ast.name;
       case 'literal':
         //TODO: FIXLATER: special handling for null value for now. the ast grammar in odata-parser also seems to be incorrect. please raise issue for that so that can get fixed. 
-        if(ast instanceof Array && ast.value[0] === 'null'){
+        if(ast.value instanceof Array && ast.value[0] === 'null'){
           return null;
         }
         return ast.value;
