@@ -28,13 +28,13 @@ export default (query, $filter) => {
  
   // trying to use odata-parser here which is the ideal solution for the entire odata things but trying to hack it here first 
   let ast = parser.parse("$filter="+$filter);
+  if(ast.error){
+    throw("parsing error: " + ast.error);
+  }
   ast = ast.$filter; // we only passed filter here for now
 
   let whereCondObj  = {};
   let getWhereCondObj = function(ast){
-    if(ast.error){
-      throw("parsing error: " + ast.error);
-    }
     let tempWhereCondObj = {};
     switch(ast.type){
       case 'and': 
