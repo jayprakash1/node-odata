@@ -11,12 +11,17 @@ import searchParser from './parser/searchParser';
 import expandParser from './parser/expandParser';
 import Promise from 'bluebird';
 
-const get = (req, sequelizeModel) => {
+const get = (req, sequelizeModel, options) => {
   return new Promise((resolve, reject) => {
     var includes = [];
     if( (sequelizeModel.getFindOneIncludes != null) && (sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models).length > 0) )
       includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models);
-    sequelizeModel.findById(req.params.id, {include: includes}).then((entity) => {
+    
+    var includeAttributes = [];
+    if( (sequelizeModel.getAttributesInclude != null) && (sequelizeModel.getAttributesInclude(options).length > 0) )
+      includeAttributes = sequelizeModel.getAttributesInclude(options);
+
+    sequelizeModel.findById(req.params.id, {attributes: {include: includeAttributes}, include: includes}).then((entity) => {
       
       if (!entity) {
         return reject({status: 404}, {text: 'Not Found'});
