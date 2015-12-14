@@ -14,8 +14,8 @@ import Promise from 'bluebird';
 const get = (req, sequelizeModel, options) => {
   return new Promise((resolve, reject) => {
     var includes = [];
-    if( (sequelizeModel.getFindOneIncludes != null) && (sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models).length > 0) )
-      includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models);
+    if( (sequelizeModel.getFindOneIncludes != null) && (sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models, options).length > 0) )
+      includes = sequelizeModel.getFindOneIncludes(sequelizeModel.sequelize.models, options);
     
     var includeAttributes = [];
     if( (sequelizeModel.getAttributesInclude != null) && (sequelizeModel.getAttributesInclude(options).length > 0) )
