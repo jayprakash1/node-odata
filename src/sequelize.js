@@ -38,7 +38,7 @@ const get = (req, sequelizeModel, options) => {
 };
 
 // TODO: find a better name. This part is common between main model and getMoreResultsModel so keeping the logic at once place
-const queryParsingExceptTopSkipCount = (query, req, errHandle, err) => {
+const queryParsing = (query, req, skip, numOfRows, errHandle, err) => {
   if(err = searchParser(query, req.query.$search)){
     return errHandle(err);
   }
@@ -54,6 +54,16 @@ const queryParsingExceptTopSkipCount = (query, req, errHandle, err) => {
 
   /*jshint -W084 */
   if(err = orderbyParser(query, req.query.$orderby)) {
+    return errHandle(err);
+  }
+
+  /*jshint -W084 */
+  if(err = skipParser(query, skip)) {
+    return errHandle(err);
+  }
+
+  /*jshint -W084 */
+  if(err = topParser(query, numOfRows)) {
     return errHandle(err);
   }
 
@@ -76,40 +86,34 @@ const getAll = (req, sequelizeModel, options) => {
     let err;
 
     /*jshint -W084 */
+    // TODO: should be moved to queryParsing method
     if(err = countParser(resData, sequelizeModel, req.query.$count, req.query.$filter)) {
       return errHandle(err);
     }
 
-    queryParsingExceptTopSkipCount(query, req, errHandle, err);
-
-    /*jshint -W084 */
-    if(err = skipParser(query, req.query.$skip)) {
-      return errHandle(err);
-    }
-
-    /*jshint -W084 */
-    if(err = topParser(query, req.query.$top)) {
-      return errHandle(err);
-    }
+    queryParsing(query, req, req.query.$skip, req.query.$top, errHandle, err);
 
     // TODO
     // $expand=Customers/Orders
     // $search
 
     let findAllArgs;
-    return sequelizeModel.findAll((findAllArgs = query.build(sequelizeModel, options))).then((data) => {
+    return sequelizeModel.findAndCountAll((findAllArgs = query.build(sequelizeModel, options))).then((data) => {
+      console.log("total number of rows: " +data.count);
       // Check the limit on results and data length received so that we can augment results with moreResults table
-      if(findAllArgs.limit && data.length < findAllArgs.limit && _.isFunction(sequelizeModel.getMoreResultsModel)){
+      if(findAllArgs.limit && data.rows.length < findAllArgs.limit && _.isFunction(sequelizeModel.getMoreResultsModel)){
         let moreResultsModel = sequelizeModel.getMoreResultsModel(sequelizeModel.sequelize.models);
         let moreResultsquery = new Builder();
-        queryParsingExceptTopSkipCount(moreResultsquery, req, errHandle, err);
+        let moreRowsRequired = findAllArgs.limit - data.rows.length;
+        let skipCount = data.rows.length ? null : findAllArgs.offset ? (findAllArgs.offset - data.count) : null;
+        queryParsing(moreResultsquery, req, skipCount, moreRowsRequired, errHandle, err);
         // TODO; review logic for limit & top here. Ignoring all of that for now and return all results from moreResultsModel 
         return moreResultsModel.findAll(moreResultsquery.build(moreResultsModel, options)).then((moreData) => {
-          resData.value = data.concat(moreData);
+          resData.value = data.rows.concat(moreData);
           return resolve({entity: resData});
         });
       } else {
-        resData.value = data;
+        resData.value = data.rows;
         return resolve({entity: resData});
       }
     }).catch((err) => {
