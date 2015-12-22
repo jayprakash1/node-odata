@@ -5,7 +5,8 @@ import { min } from 'lodash';
 // ?$skip=10
 // ->
 // query.skip(10)
-export default (query, skip = 0, maxSkip = 10000) => {
+// TODO: see if we need maxSkip, making it very high for now
+export default (query, skip = 0, maxSkip = 100000000) => {
   if (isNaN(+skip)) {
     return;
   }
