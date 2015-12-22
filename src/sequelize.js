@@ -10,6 +10,7 @@ import selectParser from './parser/selectParser';
 import searchParser from './parser/searchParser';
 import expandParser from './parser/expandParser';
 import Promise from 'bluebird';
+import _ from 'lodash';
 
 const get = (req, sequelizeModel, options) => {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,32 @@ const get = (req, sequelizeModel, options) => {
   });
 };
 
+// TODO: find a better name. This part is common between main model and getMoreResultsModel so keeping the logic at once place
+const queryParsingExceptTopSkipCount = (query, req, errHandle, err) => {
+  if(err = searchParser(query, req.query.$search)){
+    return errHandle(err);
+  }
+
+  if(err = expandParser(query, req.query.$expand)){
+    return errHandle(err);
+  }
+
+  /*jshint -W084 */
+  if(err = filterParser(query, req.query.$filter)) {
+    return errHandle(err);
+  }
+
+  /*jshint -W084 */
+  if(err = orderbyParser(query, req.query.$orderby)) {
+    return errHandle(err);
+  }
+
+  /*jshint -W084 */
+  if(err = selectParser(query, req.query.$select)) {
+    return errHandle(err);
+  }
+}
+
 const getAll = (req, sequelizeModel, options) => {
   return new Promise((resolve, reject) => {
     let resData = {};
@@ -53,23 +80,7 @@ const getAll = (req, sequelizeModel, options) => {
       return errHandle(err);
     }
 
-    if(err = searchParser(query, req.query.$search)){
-      return errHandle(err);
-    }
-
-    if(err = expandParser(query, req.query.$expand)){
-      return errHandle(err);
-    }
-
-    /*jshint -W084 */
-    if(err = filterParser(query, req.query.$filter)) {
-      return errHandle(err);
-    }
-
-    /*jshint -W084 */
-    if(err = orderbyParser(query, req.query.$orderby)) {
-      return errHandle(err);
-    }
+    queryParsingExceptTopSkipCount(query, req, errHandle, err);
 
     /*jshint -W084 */
     if(err = skipParser(query, req.query.$skip)) {
@@ -81,18 +92,26 @@ const getAll = (req, sequelizeModel, options) => {
       return errHandle(err);
     }
 
-    /*jshint -W084 */
-    if(err = selectParser(query, req.query.$select)) {
-      return errHandle(err);
-    }
-
     // TODO
     // $expand=Customers/Orders
     // $search
 
-    return sequelizeModel.findAll(query.build(sequelizeModel, options)).then((data) => {
-      resData.value = data;
-      return resolve({entity: resData});
+    let findAllArgs;
+    return sequelizeModel.findAll((findAllArgs = query.build(sequelizeModel, options))).then((data) => {
+      // Check the limit on results and data length received so that we can augment results with moreResults table
+      if(findAllArgs.limit && data.length < findAllArgs.limit && _.isFunction(sequelizeModel.getMoreResultsModel)){
+        let moreResultsModel = sequelizeModel.getMoreResultsModel(sequelizeModel.sequelize.models);
+        let moreResultsquery = new Builder();
+        queryParsingExceptTopSkipCount(moreResultsquery, req, errHandle, err);
+        // TODO; review logic for limit & top here. Ignoring all of that for now and return all results from moreResultsModel 
+        return moreResultsModel.findAll(moreResultsquery.build(moreResultsModel, options)).then((moreData) => {
+          resData.value = data.concat(moreData);
+          return resolve({entity: resData});
+        });
+      } else {
+        resData.value = data;
+        return resolve({entity: resData});
+      }
     }).catch((err) => {
       return errHandle(err);
     });
