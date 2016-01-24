@@ -98,22 +98,24 @@ const getAll = (req, sequelizeModel, options) => {
     // $search
 
     let findAllArgs;
-    return sequelizeModel.findAndCountAll((findAllArgs = query.build(sequelizeModel, options))).then((data) => {
-      console.log("total number of rows: " +data.count);
+    return sequelizeModel.findAll((findAllArgs = query.build(sequelizeModel, options))).then((data) => {
       // Check the limit on results and data length received so that we can augment results with moreResults table
-      if(findAllArgs.limit && data.rows.length < findAllArgs.limit && _.isFunction(sequelizeModel.getMoreResultsModel)){
-        let moreResultsModel = sequelizeModel.getMoreResultsModel(sequelizeModel.sequelize.models);
-        let moreResultsquery = new Builder();
-        let moreRowsRequired = findAllArgs.limit - data.rows.length;
-        let skipCount = data.rows.length ? null : findAllArgs.offset ? (findAllArgs.offset - data.count) : null;
-        queryParsing(moreResultsquery, req, skipCount, moreRowsRequired, errHandle, err);
-        // TODO; review logic for limit & top here. Ignoring all of that for now and return all results from moreResultsModel 
-        return moreResultsModel.findAll(moreResultsquery.build(moreResultsModel, options)).then((moreData) => {
-          resData.value = data.rows.concat(moreData);
-          return resolve({entity: resData});
+      if(findAllArgs.limit && data.length < findAllArgs.limit && _.isFunction(sequelizeModel.getMoreResultsModel)){
+        return sequelizeModel.count(findAllArgs).then((count) => {
+          console.log("total number of rows: " +count);
+          let moreResultsModel = sequelizeModel.getMoreResultsModel(sequelizeModel.sequelize.models);
+          let moreResultsquery = new Builder();
+          let moreRowsRequired = findAllArgs.limit - data.length;
+          let skipCount = data.length ? null : findAllArgs.offset ? (findAllArgs.offset - count) : null;
+          queryParsing(moreResultsquery, req, skipCount, moreRowsRequired, errHandle, err);
+          // TODO; review logic for limit & top here. Ignoring all of that for now and return all results from moreResultsModel 
+          return moreResultsModel.findAll(moreResultsquery.build(moreResultsModel, options)).then((moreData) => {
+            resData.value = data.concat(moreData);
+            return resolve({entity: resData});
+          });
         });
       } else {
-        resData.value = data.rows;
+        resData.value = data;
         return resolve({entity: resData});
       }
     }).catch((err) => {

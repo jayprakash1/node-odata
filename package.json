@@ -17,6 +17,7 @@
   },
   "scripts": {
     "prepublish": "make compile",
+    "preinstall": "make compile",
     "test": "make"
   },
   "keywords": [
