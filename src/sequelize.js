@@ -108,6 +108,7 @@ const getAll = (req, sequelizeModel, options) => {
           let moreRowsRequired = findAllArgs.limit - data.length;
           let skipCount = data.length ? null : findAllArgs.offset ? (findAllArgs.offset - count) : null;
           queryParsing(moreResultsquery, req, skipCount, moreRowsRequired, errHandle, err);
+          options.prefix = moreResultsModel.getDefaultPrefix; // needs to be added as table name is changing now(courseoffer and teacher both have lat field) 
           // TODO; review logic for limit & top here. Ignoring all of that for now and return all results from moreResultsModel 
           return moreResultsModel.findAll(moreResultsquery.build(moreResultsModel, options)).then((moreData) => {
             resData.value = data.concat(moreData);
